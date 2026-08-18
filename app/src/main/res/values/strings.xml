@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Auto Text Tapper</string>
+
+    <!-- Accessibility service (shown in Android Settings) -->
+    <string name="accessibility_service_label">Auto Text Tapper</string>
+    <string name="accessibility_service_description">Auto Text Tapper performs user-controlled taps and swipes on visible accessible text, only after you press Start. Use it only on screens and apps you are authorized to automate.</string>
+
+    <!-- UI labels -->
+    <string name="button_open_accessibility">Open Accessibility Settings</string>
+    <string name="button_start">Start (5-second delay)</string>
+    <string name="button_stop">Stop</string>
+    <string name="disclosure">Accessibility permission is required for user-controlled automation. Use only on screens and apps you are authorized to automate.</string>
+
+    <!-- Status messages -->
+    <string name="status_service_disabled">Accessibility service is disabled</string>
+    <string name="status_enabled_ready">Service enabled and ready</string>
+    <string name="status_started_waiting">Started: waiting 5 seconds</string>
+    <string name="status_searching">Searching for Like video / Skip</string>
+    <string name="status_like_clicked">Like video clicked: waiting 5 seconds</string>
+    <string name="status_double_tapping">Double-tapping screen centre</string>
+    <string name="status_first_swipe">First swipe-back</string>
+    <string name="status_waiting_between_swipes">Waiting 0.5 seconds</string>
+    <string name="status_second_swipe">Second swipe-back</string>
+    <string name="status_waiting_for_loading">Waiting for Loading</string>
+    <string name="status_loading_detected">Loading detected. Waiting for it to finish.</string>
+    <string name="status_loading_finished">Loading finished; restarting scan</string>
+    <string name="status_loading_timeout">Loading timeout; restarting scan</string>
+    <string name="status_skip_clicked">Skip clicked: waiting 4 seconds</string>
+    <string name="status_gesture_failed">Gesture cancelled; returning to scan</string>
+    <string name="status_stopped">Stopped</string>
+</resources>
