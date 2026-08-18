@@ -1,0 +1,19 @@
+# Gradle / build outputs
+.gradle/
+build/
+**/build/
+
+# Local configuration (SDK paths, signing) — never commit
+local.properties
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+.cxx/
+captures/
+.externalNativeBuild/
+.navigation/
+
+# OS files
+.DS_Store
+Thumbs.db
