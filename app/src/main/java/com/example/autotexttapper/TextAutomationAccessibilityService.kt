@@ -32,7 +32,8 @@ import android.view.accessibility.AccessibilityNodeInfo
  *
  *   FIND_LIKE_OR_SKIP ("Like video" ALWAYS wins over "Skip"):
  *     - "Like video" found  -> click -> WAIT_AFTER_LIKE (5 s)
- *       -> DOUBLE_TAP_CENTER -> FIRST_SWIPE_BACK -> WAIT_BETWEEN_SWIPES (0.5 s)
+ *       -> DOUBLE_TAP_CENTER -> WAIT_AFTER_DOUBLE_TAP (2 s)
+ *       -> FIRST_SWIPE_BACK -> WAIT_BETWEEN_SWIPES (0.5 s)
  *       -> SECOND_SWIPE_BACK -> WAIT_FOR_LOADING (-> WAIT_FOR_LOADING_TO_FINISH)
  *       -> WAIT_AFTER_LOADING_FINISH (0.5 s settle) -> FIND_LIKE_OR_SKIP
  *     - "Skip" found         -> click -> WAIT_AFTER_SKIP (4 s) -> FIND_LIKE_OR_SKIP
@@ -51,6 +52,7 @@ class TextAutomationAccessibilityService : AccessibilityService() {
         FIND_LIKE_OR_SKIP,
         WAIT_AFTER_LIKE,
         DOUBLE_TAP_CENTER,
+        WAIT_AFTER_DOUBLE_TAP,
         FIRST_SWIPE_BACK,
         WAIT_BETWEEN_SWIPES,
         SECOND_SWIPE_BACK,
@@ -302,18 +304,24 @@ class TextAutomationAccessibilityService : AccessibilityService() {
                 abortToMainScan()
                 return@doubleTapCentre
             }
-            startFirstSwipeBack()
+            startWaitAfterDoubleTap()
         }
     }
 
+    private fun startWaitAfterDoubleTap() {
+        setState(State.WAIT_AFTER_DOUBLE_TAP, getString(R.string.status_double_tapping))
+        runAfter(DOUBLE_TAP_TO_BACK_DELAY_MS) { startFirstSwipeBack() }
+    }
+
     private fun startFirstSwipeBack() {
+        if (state != State.WAIT_AFTER_DOUBLE_TAP) return
         setState(State.FIRST_SWIPE_BACK, getString(R.string.status_first_swipe))
         val token = runToken
-        swipeBack { success ->
-            if (token != runToken || state != State.FIRST_SWIPE_BACK) return@swipeBack
+        performBack { success ->
+            if (token != runToken || state != State.FIRST_SWIPE_BACK) return@performBack
             if (!success) {
                 abortToMainScan()
-                return@swipeBack
+                return@performBack
             }
             startWaitBetweenSwipes()
         }
@@ -328,11 +336,11 @@ class TextAutomationAccessibilityService : AccessibilityService() {
         if (state != State.WAIT_BETWEEN_SWIPES) return
         setState(State.SECOND_SWIPE_BACK, getString(R.string.status_second_swipe))
         val token = runToken
-        swipeBack { success ->
-            if (token != runToken || state != State.SECOND_SWIPE_BACK) return@swipeBack
+        performBack { success ->
+            if (token != runToken || state != State.SECOND_SWIPE_BACK) return@performBack
             if (!success) {
                 abortToMainScan()
-                return@swipeBack
+                return@performBack
             }
             startLoadingWait()
         }
@@ -553,10 +561,29 @@ class TextAutomationAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * Left-to-right swipe-back: from SWIPE_START_X_RATIO to SWIPE_END_X_RATIO
-     * of the screen width at SWIPE_Y_RATIO of the screen height.
+     * Performs one back action with the platform global action first. If the
+     * global action cannot be performed, falls back to an edge back gesture.
      */
-    private fun swipeBack(onResult: (Boolean) -> Unit) {
+    private fun performBack(onResult: (Boolean) -> Unit) {
+        val globalActionSucceeded = try {
+            performGlobalAction(GLOBAL_ACTION_BACK)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Global back action failed", t)
+            false
+        }
+        if (globalActionSucceeded) {
+            onResult(true)
+        } else {
+            edgeBackGesture(onResult)
+        }
+    }
+
+    /**
+     * Left-to-right edge back gesture, starting exactly at the left screen
+     * edge, from SWIPE_START_X_RATIO to SWIPE_END_X_RATIO of the screen width
+     * at SWIPE_Y_RATIO of the screen height.
+     */
+    private fun edgeBackGesture(onResult: (Boolean) -> Unit) {
         val (width, height) = screenSize()
         val path = Path().apply {
             moveTo(width * SWIPE_START_X_RATIO, height * SWIPE_Y_RATIO)
@@ -653,6 +680,7 @@ class TextAutomationAccessibilityService : AccessibilityService() {
         // Delays / intervals.
         const val INITIAL_DELAY_MS = 5000L
         const val WAIT_AFTER_LIKE_MS = 5000L
+        const val DOUBLE_TAP_TO_BACK_DELAY_MS = 2000L
         const val WAIT_BETWEEN_SWIPES_MS = 500L
         const val WAIT_AFTER_SKIP_MS = 4000L
         const val MAIN_SCAN_INTERVAL_MS = 1000L
@@ -665,7 +693,7 @@ class TextAutomationAccessibilityService : AccessibilityService() {
         // Gesture geometry.
         const val TAP_DURATION_MS = 60L
         const val DOUBLE_TAP_GAP_MS = 150L
-        const val SWIPE_START_X_RATIO = 0.08f
+        const val SWIPE_START_X_RATIO = 0.0f
         const val SWIPE_END_X_RATIO = 0.82f
         const val SWIPE_Y_RATIO = 0.50f
         const val SWIPE_DURATION_MS = 300L
